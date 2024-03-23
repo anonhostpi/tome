@@ -18,7 +18,7 @@ export default ({ editor }) => ({
     } = editor.getSelection();
     editor.moveTo(selRow1, 0);
     editor.selRow = selRow2;
-    editor.selCol = editor.chars[selRow2].length;
+    editor.selCol = editor.doc[selRow2].length;
     if (selCol2 === 0) {
       selRow2--;
       editor.selCol = 0;
@@ -31,22 +31,22 @@ export default ({ editor }) => ({
       selCol: editor.selCol,
       chars: []
     };
-    const isComment = editor.language.isComment(editor.chars[selRow1]);
+    const isComment = editor.language.isComment(editor.doc[selRow1]);
     const commentLine = [ ...editor.language.commentLine, ' ' ];
     for (let row = selRow1; (row <= selRow2); row++) {
-      const chars = editor.chars[row];
+      const chars = editor.doc[row];
       if (isComment) {
         for (let col = 0; (col < chars.length); col++) {
           if (startsWith(chars, col, commentLine)) {
             undo.chars[row] = [...chars];
-            editor.chars[row] = [ ...chars.slice(0, col), ...chars.slice(col + commentLine.length) ];
+            editor.doc[row] = [ ...chars.slice(0, col), ...chars.slice(col + commentLine.length) ];
           }
         }
       } else {
         for (let col = 0; (col < chars.length); col++) {
           if (chars[col] !== ' ') {
             undo.chars[row] = [...chars];
-            editor.chars[row] = [ ...chars.slice(0, col), ...commentLine, ...chars.slice(col) ];
+            editor.doc[row] = [ ...chars.slice(0, col), ...commentLine, ...chars.slice(col) ];
             break;
           }
         }
@@ -60,7 +60,7 @@ export default ({ editor }) => ({
   async undo(undo) {
     editor.setSelection(undo);
     for (const [ row, chars ] of Object.entries(undo.chars)) {
-      editor.chars[row] = [...chars];
+      editor.doc[row] = [...chars];
     }
   },
   async redo(redo) {

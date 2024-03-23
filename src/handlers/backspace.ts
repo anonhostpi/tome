@@ -1,8 +1,11 @@
 "use strict";
 
-export default ({ editor }) => ({
+import Editor from '../editor.js';
+import { HandlerFactory } from '../handlers.js';
+
+const factory: HandlerFactory = ({ editor: Editor }) => ({
   keyName: 'backspace',
-  do() {
+  do(key: string) {
     if (!editor.back()) {
       return false;
     }
@@ -30,3 +33,5 @@ export default ({ editor }) => ({
     editor.erase();
   }
 });
+
+export default factory;

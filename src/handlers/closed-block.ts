@@ -8,7 +8,7 @@ export default ({ editor }) => ({
     if (!editor.language.shouldCloseBlock(editor.state, char)) {
       return false;
     }
-    if (editor.chars[editor.row].some(char => char !== ' ')) {
+    if (editor.doc[editor.row].some(char => char !== ' ')) {
       return false;
     }
     let depth = editor.state.depth;
@@ -19,7 +19,7 @@ export default ({ editor }) => ({
     const undo = {
       row: editor.row,
       action: 'closedBlock',
-      oldCount: editor.chars[editor.row].length,
+      oldCount: editor.doc[editor.row].length,
       char
     };
     while (!editor.sol()) {

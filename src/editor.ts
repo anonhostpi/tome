@@ -2,10 +2,10 @@
 
 import fs from 'fs';
 import ansi from 'ansi-escapes';
-import Clipboard from './clipboard.js';
+import Clip from './clipboard.js';
 import Terminal from './terminal.js';
 import Language from './language.js';
-import { Handler, HandlerResult, Handlers, HandlerFactories, Undo } from './load-handler-factories.js';
+import { Handler, HandlerResult, Handlers, HandlerFactories, Undo } from './handlers.js';
 
 const stdout = process.stdout;
 
@@ -23,10 +23,10 @@ type EditorParameters = {
   save: () => void,
   close: () => void,
   status: (message: string | false) => void | false,
-  clipboard: Clipboard,
+  clipboard: Clip,
   selectorsByName: Record<string, string>,
   tabSpaces: number,
-  chars: Array<Array<string>>,
+  doc: Array<Array<string>>,
   width: number,
   height: number,
   screenTop: number,
@@ -80,7 +80,7 @@ export default class Editor implements SelectionState {
 
   status?: (message: string | false) => void;
 
-  clipboard: Clipboard;
+  clipboard: Clip;
   
   selectorsByName: Record<string, string>;
 
@@ -94,7 +94,7 @@ export default class Editor implements SelectionState {
 
   tabSpaces: number;
 
-  chars: Array<Array<string>>;
+  doc: Array<Array<string>>;
   
   width: number;
   
@@ -158,7 +158,7 @@ export default class Editor implements SelectionState {
     clipboard,
     selectorsByName,
     tabSpaces,
-    chars,
+    doc,
     width,
     height,
     screenTop,
@@ -187,7 +187,7 @@ export default class Editor implements SelectionState {
     this.handlers = {};
     this.handlersByKeyName = {};
     this.handlersWithTests = [];
-    this.chars = chars || [ [] ];
+    this.doc = doc || [ [] ];
     this.languages = languages;
     this.language = language;
     this.newState();
@@ -318,12 +318,12 @@ export default class Editor implements SelectionState {
 
   // Keep col from going off the right edge of a row
   clampCol() {
-    this.col = Math.min(this.col, this.chars[this.row].length);
+    this.col = Math.min(this.col, this.doc[this.row].length);
   }
 
   // Insert char at the current position and advance
   insertChar(char: string) {
-    this.chars[this.row].splice(this.col, 0, char);
+    this.doc[this.row].splice(this.col, 0, char);
     this.forward();
   }
 
@@ -349,14 +349,14 @@ export default class Editor implements SelectionState {
   erase(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      const eol = this.col === this.chars[this.row].length;
+      const eol = this.col === this.doc[this.row].length;
       if (!eol) {
-        this.chars[this.row].splice(this.col, 1);
+        this.doc[this.row].splice(this.col, 1);
         changed = true;
-      } else if (this.row + 1 < this.chars.length) {
-        const borrowed = this.chars[this.row + 1];
-        this.chars[this.row].splice(this.chars[this.row].length, 0, ...borrowed);
-        this.chars.splice(this.row + 1, 1);
+      } else if (this.row + 1 < this.doc.length) {
+        const borrowed = this.doc[this.row + 1];
+        this.doc[this.row].splice(this.doc[this.row].length, 0, ...borrowed);
+        this.doc.splice(this.row + 1, 1);
         changed = true;
       }
     }
@@ -394,7 +394,7 @@ export default class Editor implements SelectionState {
       this.row = row;
       this.col = 0;
       this.state = structuredClone(this.states[this.row]);
-      while (this.col < Math.min(col, this.chars[this.row].length)) {
+      while (this.col < Math.min(col, this.doc[this.row].length)) {
         this.forward();
       }
     } else {
@@ -419,7 +419,7 @@ export default class Editor implements SelectionState {
       scrolled = 'right';
     } 
     // Bias in favor of as much of the current line being visible as possible
-    while ((this.left > 0) && (this.left > this.chars[this.row].length - this.width)) {
+    while ((this.left > 0) && (this.left > this.doc[this.row].length - this.width)) {
       this.left--;
       scrolled = 'right';
     }
@@ -450,7 +450,7 @@ export default class Editor implements SelectionState {
     const actualCol = this.col;
     for (let sy = 0; (sy < this.height); sy++) {
       const _row = sy + this.top;
-      if (_row >= this.chars.length) {
+      if (_row >= this.doc.length) {
         for (let sx = 0; (sx < this.width); sx++) {
           terminal.set(this.screenLeft + sx, sy + this.screenTop, ' ');
         }
@@ -551,9 +551,9 @@ export default class Editor implements SelectionState {
     const result = [];
     for (let row = selRow1; (row <= selRow2); row++) {
       let col1 = (row === selRow1) ? selCol1 : 0;
-      let col2 = (row === selRow2) ? selCol2 : this.chars[row].length;
+      let col2 = (row === selRow2) ? selCol2 : this.doc[row].length;
       for (let col = col1; (col < col2); col++) {
-        result.push(this.chars[row][col]);
+        result.push(this.doc[row][col]);
       }
       if (row < selRow2) {
         result.push('\r');
@@ -564,12 +564,9 @@ export default class Editor implements SelectionState {
 
   // Insert appropriate number of spaces, typically called
   // on an empty newly inserted line
-  indent(undo?: Undo) {
+  indent() {
     const depth = this.state.depth;
     const spaces = depth * this.tabSpaces;
-    if (undo) {
-      undo.indent = spaces;
-    }
     for (let i = 0; (i < spaces); i++) {
       this.insertChar(' ');
     }
@@ -613,8 +610,8 @@ export default class Editor implements SelectionState {
   forward(n = 1) {
     let changed = false;
     for (let i = 0; (i < n); i++) {
-      const canMoveForward = this.col < this.chars[this.row].length;
-      const canMoveDown = this.row + 1 < this.chars.length;
+      const canMoveForward = this.col < this.doc[this.row].length;
+      const canMoveDown = this.row + 1 < this.doc.length;
       const canMove = canMoveForward || canMoveDown;
       if (canMove) {
         const peeked = this.peek();
@@ -645,7 +642,7 @@ export default class Editor implements SelectionState {
         changed = true;
       } else if (this.row > 0) {
         this.row--;
-        this.col = this.chars[this.row].length;
+        this.col = this.doc[this.row].length;
         changed = true;
       }
       if (changed) {
@@ -653,7 +650,7 @@ export default class Editor implements SelectionState {
         // think about how to avoid unnecessary clones
         this.state = structuredClone(this.states[this.row]);
         for (let col = 0; (col < this.col); col++) {
-          this.language.parse(this.state, this.chars[this.row][col], {
+          this.language.parse(this.state, this.doc[this.row][col], {
             row: this.row,
             col,
             log: this.log
@@ -680,7 +677,7 @@ export default class Editor implements SelectionState {
   }
   
   down() {
-    if ((this.row + 1) === this.chars.length) {
+    if ((this.row + 1) === this.doc.length) {
       return false;
     }
     const oldRow = this.row;
@@ -697,9 +694,9 @@ export default class Editor implements SelectionState {
   // Insert newline. Does not indent. Advances the cursor
   // to the start of the new line
   break() {
-    const remainder = this.chars[this.row].slice(this.col);
-    this.chars[this.row] = this.chars[this.row].slice(0, this.col);
-    this.chars.splice(this.row + 1, 0, remainder);
+    const remainder = this.doc[this.row].slice(this.col);
+    this.doc[this.row] = this.doc[this.row].slice(0, this.col);
+    this.doc.splice(this.row + 1, 0, remainder);
     this.forward();
   }
   
@@ -712,9 +709,9 @@ export default class Editor implements SelectionState {
     if (col == null) {
       col = this.col;
     }
-    if (col < this.chars[row].length) {
-      return this.chars[row][col];
-    } else if (row + 1 < this.chars.length) {
+    if (col < this.doc[row].length) {
+      return this.doc[row][col];
+    } else if (row + 1 < this.doc.length) {
       return '\r';
     } else {
       throw new Error('Always check eol before calling peek');
@@ -726,7 +723,7 @@ export default class Editor implements SelectionState {
   }
   
   eol() {
-    return this.col === this.chars[this.row].length;
+    return this.col === this.doc[this.row].length;
   }
 
   // Shift text left or right one tab stop.
@@ -743,40 +740,37 @@ export default class Editor implements SelectionState {
       selCol2
     } = this.getSelection();
     this.moveTo(selRow1, 0);
-    const chars: string[][] = [];
+    const doc: string[][] = [];
     this.selRow = selRow2;
-    this.selCol = this.chars[selRow2].length;
+    this.selCol = this.doc[selRow2].length;
     if (selCol2 === 0) {
       selRow2--;
       this.selCol = 0;
     }
     for (let row = selRow1; (row <= selRow2); row++) {
-      let rowChars = this.chars[row];
+      let rowChars = this.doc[row];
       if (direction === -1) {
         for (let space = 0; (space < 2); space++) {
-          if (this.chars[row][0] === ' ') {
+          if (this.doc[row][0] === ' ') {
             rowChars = rowChars.slice(1);
           }
         }
       } else {
         rowChars = [ ' ', ' ', ...rowChars ]; 
       }
-      if (rowChars !== this.chars[row]) {
-        chars[row] = [...this.chars[row]];
-        this.chars[row] = rowChars;
+      if (rowChars !== this.doc[row]) {
+        doc[row] = [...this.doc[row]];
+        this.doc[row] = rowChars;
       }
     }
     return {
       action: (direction === -1) ? 'shiftSelectionLeft' : 'shiftSelectionRight',
       row: this.row,
       col: this.col,
-      chars
+      doc
     };
   }
-  
-  toggleComment() {
-  }
-  
+    
   newState() {
     this.state = this.language.newState() || {
       depth: 0

@@ -13,10 +13,10 @@ export default ({ editor, clipboard, log }) => ({
     };
     if (findArgs.direction === 1) {
       findArgs.fromCol = findArgs.fromCol + 1;
-      if (findArgs.fromCol === editor.chars[findArgs.fromRow].length) {
+      if (findArgs.fromCol === editor.doc[findArgs.fromRow].length) {
         findArgs.fromCol = 0;
         findArgs.fromRow++;
-        if (findArgs.fromRow === editor.chars.length) {
+        if (findArgs.fromRow === editor.doc.length) {
           findArgs.fromRow = 0;
         }
       }
@@ -25,9 +25,9 @@ export default ({ editor, clipboard, log }) => ({
       if (findArgs.fromCol < 0) {
         findArgs.fromRow--;
         if (findArgs.fromRow < 0) {
-          findArgs.fromRow = editor.chars.length - 1;
+          findArgs.fromRow = editor.doc.length - 1;
         }
-        findArgs.fromCol = editor.chars[findArgs.fromRow].length - 1;
+        findArgs.fromCol = editor.doc[findArgs.fromRow].length - 1;
       }
     }
     const result = find(editor, findArgs);      

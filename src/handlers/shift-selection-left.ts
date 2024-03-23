@@ -11,8 +11,8 @@ export default ({ editor }) => ({
   },
   async undo(undo) {
     editor.setSelection(undo);
-    for (const [ row, chars ] of Object.entries(undo.chars)) {
-      editor.chars[row] = chars;
+    for (const [ row, chars ] of Object.entries(undo.doc)) {
+      editor.doc[row] = chars;
     }
   },
   async redo(redo) {

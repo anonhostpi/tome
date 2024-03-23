@@ -9,7 +9,7 @@ import { inspect } from 'util';
 import Clipboard from './clipboard.js';
 import Editor from './editor.js';
 import selectorsByName from './selectors-by-name.js';
-import { Handler, HandlerFactories, loadHandlerFactories } from './load-handler-factories.js';
+import { Handler, HandlerFactories, loadHandlerFactories } from './handlers.js';
 import loadLanguages from './load-languages.js';
 
 import Terminal from './terminal.js';
@@ -75,7 +75,7 @@ editor = new Editor({
   selectorsByName,
   clipboard,
   tabSpaces,
-  chars: loadFile() || newFile(),
+  doc: loadFile() || newFile(),
   languages,
   language: guessLanguage(filename),
   hintStack,
@@ -178,18 +178,18 @@ function saveFile() {
   if (!editor) {
     throw new Error('editor should be defined here');
   }
-  fs.writeFileSync(filename, getText(editor.chars));
+  fs.writeFileSync(filename, getText(editor.doc));
 }
 
-function getText(chars: Array<Array<string>>) : string {
-  return chars.map(line => line.join('')).join('\n');
+function getText(doc: Array<Array<string>>) : string {
+  return doc.map(line => line.join('')).join('\n');
 }
 
 async function closeEditor() {
   if (!editor) {
     throw new Error('editor should be defined here');
   }
-  const text = getText(editor.chars);
+  const text = getText(editor.doc);
   if (text !== originalText) {
     if (await confirm('Save before exiting? [Y/n]', true)) {
       saveFile();

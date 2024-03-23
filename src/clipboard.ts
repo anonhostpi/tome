@@ -7,7 +7,7 @@ interface ClipboardParameters {
   stateFolder: string
 }
 
-export default class Clipboard {
+export default class Clip {
   clipboardFile: string;
   clipboardLockFile: string;
   constructor({

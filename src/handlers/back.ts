@@ -1,10 +1,12 @@
 "use strict";
 
+import { HandlerFactory } from '../handlers.js';
+import Editor from '../editor.js';
 import select from '../select.js';
 
-export default ({ editor }) => ({
+const factory: HandlerFactory = ({ editor }) => ({
   keyName: 'left',
-  do() {
+  do(key: string) {
     return select({
       editor,
       move() {
@@ -13,3 +15,5 @@ export default ({ editor }) => ({
     });
   }
 });
+
+export default factory;
