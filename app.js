@@ -151,7 +151,7 @@ while (true) {
 }
 
 function shortFilename(prompt) {
-  if (!filename) {
+  if (!filename || (argv.stdout && !fs.existsSync(filename))) {
     return '<stdout>';
   }
   return filename.split('/').pop().substring(0, stdout.columns - (prompt || '').length - 5);
