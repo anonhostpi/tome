@@ -35,8 +35,8 @@ export default class Screen {
   }
   allocate() {
     const data = [];
-    this.width = process.stdout.columns;
-    this.height = process.stdout.rows;
+    this.width = this.stdout.columns;
+    this.height = this.stdout.rows;
     for (let row = 0; (row < this.height); row++) {
       const cells = [];
       for (let col = 0; (col < this.width); col++) {
