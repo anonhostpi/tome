@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# ~/.local/bin/tome  (make sure this directory precedes the real one in PATH)
 
 scriptroot=$(dirname "$(realpath "$0")")
 
