@@ -19,6 +19,7 @@ const tabSpaces = 2;
 const argv = boring();
 
 const filename = argv._[0];
+argv.stdout = argv.stdout || !!argv._[1];
 
 const stdin = process.stdin;
 let stdout;
@@ -150,6 +151,9 @@ while (true) {
 }
 
 function shortFilename(prompt) {
+  if (!filename) {
+    return '<stdout>';
+  }
   return filename.split('/').pop().substring(0, stdout.columns - (prompt || '').length - 5);
 }
 
@@ -176,11 +180,23 @@ function log(...args) {
 }
 
 function loadFile() {
+  let content;
+  if(argv.stdout) {
+    if(!!argv._[1]) {
+      content = argv._[1].split('\n').map(line => [...line]);
+    }
+    if(!filename && !content) {
+      return false;
+    }
+  }
+  if(!content){
   if (!fs.existsSync(filename)) {
     return false;
+    } else {
+      // Emoji-safe split by character (split('') is not safe)
+      content = fs.readFileSync(filename, 'utf8').split('\n').map(line => [...line]);
+    }
   }
-  // Emoji-safe split by character (split('') is not safe)
-  const content = fs.readFileSync(filename, 'utf8').split('\n').map(line => [...line]);
   if (!content.length) {
     content.push([]);
   }
@@ -252,6 +268,9 @@ function resize() {
 }
 
 function guessLanguage(filename) {
+  if(!filename) {
+    return languages.default;
+  }
   const matches = filename.match(/\.([^\.]+)$/);
   if (matches) {
     const found = Object.values(languages).find(language => language.extensions.includes(matches[1]));
