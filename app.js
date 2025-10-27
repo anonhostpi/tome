@@ -189,13 +189,11 @@ function loadFile() {
       return false;
     }
   }
-  if(!content){
-  if (!fs.existsSync(filename)) {
+  if (!filename || !fs.existsSync(filename)) {
     return false;
     } else {
       // Emoji-safe split by character (split('') is not safe)
       content = fs.readFileSync(filename, 'utf8').split('\n').map(line => [...line]);
-    }
   }
   if (!content.length) {
     content.push([]);
