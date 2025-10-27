@@ -22,7 +22,7 @@
     "url": "https://github.com/boutell/tome/issues"
   },
   "bin": {
-    "tome": "./bin/tome.js"
+    "tome": "./bin/tome.sh"
   },
   "homepage": "https://github.com/boutell/tome#readme",
   "dependencies": {
