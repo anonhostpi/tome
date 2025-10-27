@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import readline from 'readline';
-import properLockFile from 'proper-lockfile';
 import ansi from 'ansi-escapes';
 import boring from 'boring';
 import { inspect } from 'util';
@@ -42,8 +41,7 @@ fs.mkdirSync(stateFolder, { recursive: true });
 const logFile = fs.createWriteStream(`${stateFolder}/log.txt`, 'utf8');
 
 const clipboard = clipboardFactory({
-  stateFolder,
-  lock
+  stateFolder
 });
 
 const hintStack = [
@@ -169,19 +167,6 @@ function log(...args) {
     }
     logFile.write(arg + '\n');
   }
-}
-
-function lock(filename) {
-  return properLockFile(filename, {
-    retries: {
-      retries: 30,
-      factor: 1,
-      minTimeout: 1000,
-      maxTimeout: 1000
-    },
-    // Avoid chicken and egg problem when the file does not exist yet
-    realpath: false
-  });
 }
 
 function loadFile() {
