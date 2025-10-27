@@ -93,12 +93,13 @@ stdin.on('keypress', (c, k) => {
       // ignore occasional undefined keys on mac
       return;
     }
-    if (k.shift) {
-      k.name = `shift-${k.name}`;
-    }
-    if (k.ctrl) {
-      k.name = `control-${k.name}`;
-    }
+    let prefix = '';
+    if (k.ctrl) prefix += 'control-';
+    if (k.meta) prefix += 'meta-';
+    if (k.shift) prefix += 'shift-';
+
+    k.name = prefix + k.name;
+
     if ((k.sequence.charCodeAt(0) === 27) && (k.sequence.charCodeAt(1) === 27)) {
       // readline isn't quite smart enough on its own to do the right thing if
       // ESC is followed quickly by an arrow key, but gives us enough information
