@@ -193,9 +193,8 @@ function newFile() {
 }
 
 function saveFile() {
-  if(argv.stdout)
-    console.log(getText(editor.chars));
-  else
+  if(argv.stdout && filename == null)
+    return;
   fs.writeFileSync(filename, getText(editor.chars));
 }
 
@@ -206,7 +205,7 @@ function getText(chars) {
 async function closeEditor() {
   if(argv.stdout){
     stdout.write(ansi.clearScreen);
-    saveFile();
+    console.log(getText(editor.chars));
     process.exit(0);
   }
 
