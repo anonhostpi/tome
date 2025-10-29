@@ -207,7 +207,7 @@ function newFile() {
 }
 
 function saveFile() {
-  if(argv.stdout && filename == null)
+  if(argv.stdout && (filename == null || !fs.existsSync(filename)))
     return;
   fs.writeFileSync(filename, getText(editor.chars));
 }
