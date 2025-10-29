@@ -19,7 +19,7 @@ const tabSpaces = 2;
 const argv = boring();
 
 const filename = argv._[0];
-argv.stdout = argv.stdout || !!argv._[1];
+argv.stdout = argv.stdout || !!argv._[1] || !process.stdout.isTTY;
 
 const stdin = process.stdin;
 let stdout;
@@ -35,7 +35,10 @@ const screen = new Screen({
   log
 });
 
-if (!argv.stdout && !filename && !argv['debug-keycodes']) {
+if ((!argv.stdout && !filename && !argv['debug-keycodes']) || (argv.stdout && !process.stderr.isTTY)) {
+  if(argv.stdout && !process.stderr.isTTY) {
+    process.stderr.write('Error: Unable to display editor UI over stderr. When piping or using --stdout, stderr must be a TTY.\n\n');
+  }
   usage();
 }
 
